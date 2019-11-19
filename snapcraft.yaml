@@ -1,0 +1,58 @@
+name: galmon
+base: core18
+summary: galileo/GPS/GLONASS/BeiDou open source monitoring
+adopt-info: galmon
+description: |
+  * Processes raw frames/strings/words from GPS, GLONASS, BeiDou and Galileo
+  * All-band support (E1, E5b, B1I, B2I, Glonass L1, Glonass L2, GPS L1C/A) so far, GPS L2C and Galileo E5a pending).
+  * Calculate ephemeris positions
+  * Comparison of ephemerides to independent SP3 data to determine SISE
+    * Globally, locally, worst user location
+  * Record discontinuities between subsequent ephemerides (in time and space)
+  * Compare doppler shift as reported by receiver with that expected from ephemeris
+  * Track atomic clock & report jumps
+  * Coverage maps (number of satellites >5, >10, >20 elevation)
+  * HDOP/VDOP/PDOP maps
+  * Compare orbit to TLE, match up to best matching satellite
+  * Tear out every bit that tells us how well an SV is doing
+  * Full almanac processing to see what should be transmitting
+  * Distributed receivers, combined into a single source of all messages
+  * Ready to detect/report spoofing/jamming
+
+  Data is made available as JSON, as a user-friendly website and as a
+  time-series database. This time-series database is easily mated to the
+  industry standard Matplotlib/Pandas/Jupyter combination.
+
+grade: stable
+confinement: strict
+
+apps:
+  ubxtool:
+    command: ubxtool
+    plugs:
+      - raw-usb
+      - serial-port
+  navdump:
+    command: navdump
+
+parts:
+  galmon:
+    plugin: make
+    source: https://github.com/ahupowerdns/galmon
+    source-type: git
+    artifacts:
+      - ubxtool
+      - navdump
+    override-build: |
+      snapcraftctl set-version "$(git describe --all --long | sed 's|heads/||')"
+      make ubxtool navdump
+      cp ubxtool navdump ../install
+    build-packages:
+      - libcurl4-openssl-dev
+      - libprotobuf-dev
+      - libh2o-dev
+      - libssl-dev
+      - g++
+      - protobuf-compiler
+    stage-packages:
+      - libprotobuf10
